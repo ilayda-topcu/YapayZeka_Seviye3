@@ -1,0 +1,81 @@
+version: '3.8'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agroplus-app
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+      - "5173:5173"
+    environment:
+      NODE_ENV: production
+      MARIADB_HOST: mariadb
+      MARIADB_PORT: 3306
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-root123}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-agroplus}
+      MARIADB_USER: ${MARIADB_USER:-agroplus}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-agroplus123}
+      PORT: 3001
+      VITE_API_BASE: http://localhost:3001/api
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - agroplus-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  mariadb:
+    image: mariadb:11.4
+    container_name: agroplus-mariadb
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-root123}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-agroplus}
+      MARIADB_USER: ${MARIADB_USER:-agroplus}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-agroplus123}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./db.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_turkish_ci
+    networks:
+      - agroplus-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: agroplus-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+      PMA_USER: ${MARIADB_USER:-agroplus}
+      PMA_PASSWORD: ${MARIADB_PASSWORD:-agroplus123}
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-root123}
+    networks:
+      - agroplus-network
+
+networks:
+  agroplus-network:
+    driver: bridge
+
+volumes:
+  mariadb_data:
