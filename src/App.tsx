@@ -4,17 +4,19 @@ import {
   LayoutDashboard, MapPinned, Menu, MoreHorizontal, Package, Plus, Search,
   Settings, ShoppingCart, Tractor, Users, Wrench, X, ArrowUpRight, TrendingUp,
   AlertTriangle, CheckCircle2, Warehouse, Sparkles, Zap, Check, AlertCircle, FileText,
-  Share2, MessageSquare, Layers, Clock, ShieldCheck, CheckCheck, Send, RotateCcw
+  Share2, MessageSquare, Layers, Clock, ShieldCheck, CheckCheck, Send, RotateCcw, Bot
 } from 'lucide-react'
 import FieldWorks from './FieldWorks'
 import SocialMediaAgent from './SocialMediaAgent'
 import OrdersAndQuotes from './OrdersAndQuotes'
+import HelpChatbotAgent from './HelpChatbotAgent'
 import AgroCalendarPopover from './AgroCalendarPopover'
 import AgroNotificationDrawer, { INITIAL_NOTIFICATIONS } from './AgroNotificationDrawer'
 import FullCalendarModal from './FullCalendarModal'
 import UserProfileMenu from './UserProfileMenu'
 import AccountDetailsModal from './AccountDetailsModal'
 import PreferencesModal from './PreferencesModal'
+import ChatbotWidget from './ChatbotWidget'
 import { Page, NotificationItem } from './types/navigation'
 
 
@@ -49,6 +51,7 @@ const mainNav: NavItem[] = [
 ]
 
 const aiNav: NavItem[] = [
+  { label: 'Yardım Chatbotu (AI)', icon: Bot, badge: 'Asistan', badgeClass: 'ai-badge' },
   { label: 'Teklif Kontrolü (AI)', icon: Zap, badge: 'AI', badgeClass: 'ai-badge' },
   { label: 'Sosyal Medya İçeriği Üret', icon: Share2, badge: 'Yeni', badgeClass: 'new-badge' },
   { label: 'Yapay Zeka Ajanları', icon: Sparkles }
@@ -67,6 +70,7 @@ const pageMeta: Record<Exclude<Page, 'Genel Bakış'>, { eyebrow: string; title:
   'Stok Takibi': { eyebrow: 'Envanter', title: 'Stok Takibi', description: 'Kritik stokları, depo dağılımını ve hareketleri izleyin.', action: 'Stok Hareketi' },
   'Müşteriler': { eyebrow: 'CRM', title: 'Müşteriler', description: 'Müşteri profillerini, makine parkını ve işlem geçmişini yönetin.', action: 'Yeni Müşteri' },
   'Sipariş & Teklifler': { eyebrow: 'Satış & Teklif Yönetimi', title: 'Siparişler ve Teklifler', description: 'Açık siparişleri, müşteri tekliflerini ve satış süreçlerini bir arada izleyin.', action: 'Yeni İşlem' },
+  'Yardım Chatbotu (AI)': { eyebrow: 'Yapay Zeka & Destek', title: 'Yardım & Veritabanı Asistanı', description: 'Sadece veritabanı kayıtlarıyla çalışan akıllı operasyonel asistan. Olmayan bilgilerde anında talep oluşturur.', action: 'Yeni Sohbet' },
   'Teklif Kontrolü (AI)': { eyebrow: 'Yapay Zeka & Otomasyon', title: 'Teklif Kontrolü AI Ajanı', description: 'AI destekli teklif onay mekanizması. Onaylanan teklifler siparişe aktarılır, reddedilenler şikayet-talep tablosuna kaydedilir.', action: 'AI Kontrol Başlat' },
   'Sosyal Medya İçeriği Üret': { eyebrow: 'Yapay Zeka & Sosyal Medya', title: 'Sosyal Medya İçerik Üretim Ajanı', description: 'Medya postları, 24 saatlik durumlar, 1 dakikalık video senaryoları ve görseller üretin.', action: 'Hızlı İçerik Üret' },
   'Tamir & Bakım': { eyebrow: 'Servis Yönetimi', title: 'Tamir & Bakım', description: 'Servis kayıtları, atanan teknisyenler ve işlem durumları.', action: 'Servis Kaydı' },
@@ -823,9 +827,11 @@ function QuoteControlPage({ initialParams }: { initialParams?: Record<string, an
 
 const fallbackAiAgents = {
   agents: [
-    { id: 1, name: 'Satış Ajan', role: 'Teklif Değerlendirme', status: 'ready' },
-    { id: 2, name: 'Teknik Ajan', role: 'Ürün Uygunluk Analizi', status: 'ready' },
-    { id: 3, name: 'Finans Ajan', role: 'Fiyat ve Marj Kontrol', status: 'ready' }
+    { id: 1, name: 'Yardım Chatbotu (AI)', role: 'Veritabanı Asistanı & Talep Kayıt', status: 'ready', page: 'Yardım Chatbotu (AI)' },
+    { id: 2, name: 'Satış Ajan', role: 'Teklif Değerlendirme', status: 'ready', page: 'Teklif Kontrolü (AI)' },
+    { id: 3, name: 'Sosyal Medya Ajanı', role: 'Görsel & Video Senaryo Üretimi', status: 'ready', page: 'Sosyal Medya İçeriği Üret' },
+    { id: 4, name: 'Teknik Ajan', role: 'Ürün Uygunluk Analizi', status: 'ready' },
+    { id: 5, name: 'Finans Ajan', role: 'Fiyat ve Marj Kontrol', status: 'ready' }
   ],
   lastResults: [
     { agent: 'Satış Ajan', quote: 'SIP-1048', customer: 'Bereket Tarım Ltd.', decision: 'Onaylı', confidence: 92, reason: 'Müşteri kredisi iyi, önceki işlemler başarılı' },
@@ -834,7 +840,7 @@ const fallbackAiAgents = {
   ]
 }
 
-function AiAgentsPage() {
+function AiAgentsPage({ onNavigate }: { onNavigate?: (page: Page) => void }) {
   const [data, setData] = useState<any>(fallbackAiAgents)
   const [running, setRunning] = useState(false)
   const [result, setResult] = useState<any>(null)
@@ -1061,6 +1067,7 @@ function DetailPage({
       'Stok Takibi': '/stock',
       'Müşteriler': '/customers',
       'Sipariş & Teklifler': '/orders',
+      'Yardım Chatbotu (AI)': '/ai-agents',
       'Teklif Kontrolü (AI)': '/quote-control',
       'Sosyal Medya İçeriği Üret': '/ai-agents',
       'Tamir & Bakım': '/services',
@@ -1782,13 +1789,18 @@ export default function App() {
             <AnalyticsPage />
           ) : page === 'Saha İşleri' ? (
             <FieldWorks initialParams={currentParams} />
+          ) : page === 'Yardım Chatbotu (AI)' ? (
+            <HelpChatbotAgent onNavigate={handleNavigate} />
           ) : page === 'Yapay Zeka Ajanları' ? (
-            <AiAgentsPage />
+            <AiAgentsPage onNavigate={handleNavigate} />
           ) : (
             <DetailPage page={page} params={currentParams} onNavigate={handleNavigate} />
           )}
         </div>
       </main>
+
+      {/* 🤖 Sağ Alt Yüzen AI Yardımcı Chatbot Widget'ı */}
+      <ChatbotWidget />
     </div>
   )
 }

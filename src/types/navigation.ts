@@ -7,6 +7,7 @@ export type Page =
   | 'Sipariş & Teklifler'
   | 'Teklif Kontrolü (AI)'
   | 'Sosyal Medya İçeriği Üret'
+  | 'Yardım Chatbotu (AI)'
   | 'Tamir & Bakım'
   | 'Şikayet & Talep'
   | 'Depolar'

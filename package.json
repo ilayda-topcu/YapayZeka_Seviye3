@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:client": "vite",
-    "dev:server": "node server/index.js",
+    "dev:server": "node --watch server/index.js",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },

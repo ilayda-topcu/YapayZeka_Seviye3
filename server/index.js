@@ -955,34 +955,327 @@ app.put('/api/complaints/:id', async (req, res) => {
   }
 });
 
-// ==================== EMAIL GÖNDERME UTILITY ====================
+// ==================== ENTERPRISE AI DATABASE ASSISTANT ====================
 
-async function sendApprovalEmail(email, customerName, quoteNo, status, notes = '') {
+// In-memory conversation session context to track pending ticket creation
+const pendingTicketSessions = new Map();
+
+// Helper to query all relevant database tables matching keywords
+async function queryAgroDatabase(queryText) {
+  const q = queryText.toLowerCase().trim();
+  const words = q.replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, " ").split(/\s+/).filter(w => w.length > 1);
+
+  const results = {
+    parts: [],
+    models: [],
+    customers: [],
+    services: [],
+    quotes: [],
+    warehouses: [],
+    branches: [],
+    brands: []
+  };
+
   try {
-    // Email gönderme simülasyonu (gerçek ortamda nodemailer kullanılacak)
-    console.log(`📧 Email sent to ${email}`);
-    console.log(`   Müşteri: ${customerName}`);
-    console.log(`   Teklif: ${quoteNo}`);
-    console.log(`   Durum: ${status === 'APPROVED' ? '✅ ONAYLANDI' : '❌ REDDEDİLDİ'}`);
-    if (notes) console.log(`   Notlar: ${notes}`);
+    const isModelQuery = q.includes('traktör') || q.includes('model') || q.includes('makine') || q.includes('ekipman');
+    const isPartQuery = q.includes('parça') || q.includes('stok') || q.includes('filtre') || q.includes('pompa') || q.includes('yedek');
+    const isServiceQuery = q.includes('servis') || q.includes('bakım') || q.includes('tamir') || q.includes('usta') || q.includes('teknisyen');
+    const isCustomerQuery = q.includes('müşteri') || q.includes('çiftçi') || q.includes('telefon');
+    const isQuoteQuery = q.includes('teklif') || q.includes('sipariş') || q.includes('fiyat');
 
-    // Email log tablosuna kayıt et
-    await pool.query(`
-      INSERT INTO email_logs (recipient_email, subject, email_type, reference_id, reference_type, body_preview, status)
-      VALUES (?, ?, ?, ?, ?, ?, 'SENT');
-    `, [
-      email,
-      `Teklif ${status === 'APPROVED' ? 'Onaylandı' : 'Reddedildi'} - ${quoteNo}`,
-      status === 'APPROVED' ? 'QUOTE_APPROVAL' : 'QUOTE_REJECTION',
-      null,
-      'QUOTE',
-      `${customerName} müşterisine gönderilen ${quoteNo} teklifinin ${status === 'APPROVED' ? 'onaylandı' : 'reddedildi'} bildirimi.`
-    ]);
-  } catch (error) {
-    console.error('Email log kaydı başarısız:', error.message);
+    // 1. Fetch all brands & check mentions
+    const allBrands = await listRows(`SELECT id, name FROM brands WHERE is_active = 1`);
+    const mentionedBrands = allBrands.filter(b => q.includes(b.name.toLowerCase()));
+
+    // 2. Query Equipment Models
+    let modelSql = `
+      SELECT m.model_name, m.model_year, m.engine_power_hp, b.name as brand_name, c.name as category_name
+      FROM equipment_models m
+      LEFT JOIN brands b ON b.id = m.brand_id
+      LEFT JOIN product_categories c ON c.id = m.category_id
+      WHERE 1=1
+    `;
+
+    if (mentionedBrands.length > 0) {
+      const brandIds = mentionedBrands.map(b => b.id);
+      results.models = await listRows(modelSql + ` AND m.brand_id IN (${brandIds.join(',')})`);
+    } else if (isModelQuery) {
+      results.models = await listRows(modelSql + ` LIMIT 10`);
+    } else {
+      for (const w of words) {
+        if (w.length < 3) continue;
+        const rows = await listRows(modelSql + ` AND (LOWER(m.model_name) LIKE ? OR LOWER(b.name) LIKE ?)`, [`%${w}%`, `%${w}%`]);
+        if (rows.length > 0) results.models.push(...rows);
+      }
+    }
+
+    // 3. Query Spare Parts & Stocks
+    let partSql = `
+      SELECT p.part_code, p.name as part_name, p.sale_price, p.minimum_stock, b.name as brand_name,
+             COALESCE(SUM(ws.quantity), 0) as total_stock
+      FROM spare_parts p
+      LEFT JOIN brands b ON b.id = p.brand_id
+      LEFT JOIN warehouse_stock ws ON ws.spare_part_id = p.id
+      WHERE p.is_active = 1
+    `;
+    if (isPartQuery && (q.includes('kritik') || q.includes('azalan') || q.includes('eşik'))) {
+      results.parts = await listRows(partSql + ` GROUP BY p.id HAVING total_stock <= p.minimum_stock LIMIT 10`);
+    } else if (isPartQuery) {
+      results.parts = await listRows(partSql + ` GROUP BY p.id LIMIT 8`);
+    } else {
+      for (const w of words) {
+        if (w.length < 3) continue;
+        const rows = await listRows(partSql + ` AND (LOWER(p.name) LIKE ? OR LOWER(p.part_code) LIKE ? OR LOWER(b.name) LIKE ?) GROUP BY p.id LIMIT 6`, [`%${w}%`, `%${w}%`, `%${w}%`]);
+        if (rows.length > 0) results.parts.push(...rows);
+      }
+    }
+
+    // 4. Query Service Records
+    let serviceSql = `
+      SELECT sr.service_no, sr.status, sr.complaint as service_type, sr.scheduled_at, c.name as customer_name,
+             u.full_name as technician_name, b.name as branch_name
+      FROM service_records sr
+      LEFT JOIN customer_machines cm ON cm.id = sr.customer_machine_id
+      LEFT JOIN customers c ON c.id = cm.customer_id
+      LEFT JOIN users u ON u.id = sr.technician_id
+      LEFT JOIN branches b ON b.id = sr.branch_id
+      WHERE 1=1
+    `;
+    if (isServiceQuery && (q.includes('bekleyen') || q.includes('aktif') || q.includes('bugün'))) {
+      results.services = await listRows(serviceSql + ` AND sr.status IN ('PLANNED', 'IN_PROGRESS', 'WAITING_PART') LIMIT 6`);
+    } else if (isServiceQuery) {
+      results.services = await listRows(serviceSql + ` ORDER BY sr.created_at DESC LIMIT 6`);
+    } else {
+      for (const w of words) {
+        if (w.length < 3) continue;
+        const rows = await listRows(serviceSql + ` AND (LOWER(sr.service_no) LIKE ? OR LOWER(c.name) LIKE ? OR LOWER(sr.complaint) LIKE ?) LIMIT 4`, [`%${w}%`, `%${w}%`, `%${w}%`]);
+        if (rows.length > 0) results.services.push(...rows);
+      }
+    }
+
+    // 5. Query Customers
+    if (isCustomerQuery) {
+      results.customers = await listRows(`SELECT name, phone, email, city, district, customer_type FROM customers LIMIT 6`);
+    } else {
+      for (const w of words) {
+        if (w.length < 3) continue;
+        const rows = await listRows(`SELECT name, phone, email, city, district, customer_type FROM customers WHERE LOWER(name) LIKE ? OR LOWER(phone) LIKE ? OR LOWER(city) LIKE ? LIMIT 4`, [`%${w}%`, `%${w}%`, `%${w}%`]);
+        if (rows.length > 0) results.customers.push(...rows);
+      }
+    }
+
+    // 6. Query Quotes & Orders
+    if (isQuoteQuery) {
+      results.quotes = await listRows(`
+        SELECT q.quote_no, q.status, q.grand_total, q.quote_date, c.name as customer_name
+        FROM quotes q
+        LEFT JOIN customers c ON c.id = q.customer_id
+        ORDER BY q.created_at DESC
+        LIMIT 6;
+      `);
+    }
+
+  } catch (err) {
+    console.warn('Database search error:', err.message);
   }
+
+  // Deduplicate
+  const seenModels = new Set();
+  results.models = results.models.filter(m => {
+    const key = `${m.brand_name}-${m.model_name}`;
+    if (seenModels.has(key)) return false;
+    seenModels.add(key);
+    return true;
+  });
+
+  const seenParts = new Set();
+  results.parts = results.parts.filter(p => {
+    if (seenParts.has(p.part_code)) return false;
+    seenParts.add(p.part_code);
+    return true;
+  });
+
+  return results;
 }
+
+app.post('/api/ai-assistant/chat', async (req, res) => {
+  try {
+    const { message, sessionId = 'default-user', pendingTicketInfo } = req.body;
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ reply: 'Lütfen geçerli bir soru iletiniz.' });
+    }
+
+    const trimmed = message.trim();
+    const queryLower = trimmed.toLowerCase();
+
+    // Check if user is confirming a pending ticket creation
+    const isAffirmative = ['evet', 'oluştur', 'evet oluştur', 'kaydet', 'tamam', 'talep aç', 'evet lütfen', 'oluşturulsun'].some(
+      word => queryLower === word || queryLower.startsWith(word)
+    );
+
+    const activePending = pendingTicketInfo || pendingTicketSessions.get(sessionId);
+
+    if (isAffirmative && activePending) {
+      // Create ticket in database
+      const ticketNo = `TLP-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+      
+      // Default to customer ID 1 (or find matching)
+      let customerId = 1;
+      try {
+        const [[cust]] = await pool.query('SELECT id FROM customers LIMIT 1');
+        if (cust) customerId = cust.id;
+
+        await pool.query(`
+          INSERT INTO requests_complaints (ticket_no, customer_id, ticket_type, subject, description, priority, status)
+          VALUES (?, ?, 'REQUEST', ?, ?, 'MEDIUM', 'OPEN');
+        `, [
+          ticketNo,
+          customerId,
+          activePending.subject || 'AI Asistan Üzerinden Açılan Talep',
+          activePending.description || `Kullanıcı Sorusu: ${activePending.query || trimmed}`
+        ]);
+
+        pendingTicketSessions.delete(sessionId);
+
+        return res.json({
+          reply: `✅ **Talebiniz Başarıyla Oluşturuldu!**\n\n• **Kayıt No:** \`#${ticketNo}\`\n• **Konu:** ${activePending.subject || 'Talep'}\n• **Durum:** İnceleniyor (AÇIK)\n\nTalebiniz **Şikayet & Talep** modülüne iletildi. Yetkili operasyon ve teknik ekibimiz en kısa sürede sizinle iletişime geçecektir.`,
+          isNotFound: false,
+          ticketCreated: true,
+          ticketNo
+        });
+      } catch (dbErr) {
+        console.error('Ticket creation error:', dbErr);
+        return res.status(500).json({ reply: 'Talep oluşturulurken bir veritabanı hatası meydana geldi.' });
+      }
+    }
+
+    // Query live MariaDB data
+    const dbResults = await queryAgroDatabase(trimmed);
+    const hasData = (
+      dbResults.parts.length > 0 ||
+      dbResults.models.length > 0 ||
+      dbResults.customers.length > 0 ||
+      dbResults.services.length > 0 ||
+      dbResults.quotes.length > 0 ||
+      dbResults.warehouses.length > 0
+    );
+
+    // If no records found in database
+    if (!hasData) {
+      const suggestedSubject = `Veritabanında Bulunamayan Bilgi: "${trimmed.slice(0, 45)}"`;
+      const suggestedDesc = `Kullanıcı veritabanında arama yaptı ancak sonuç bulunamadı: "${trimmed}". İlgili parça/model/işlem için kayıt açılması isteniyor.`;
+
+      pendingTicketSessions.set(sessionId, {
+        query: trimmed,
+        subject: suggestedSubject,
+        description: suggestedDesc
+      });
+
+      return res.json({
+        reply: `🔍 **Veritabanı Sonucu:**\nAradığınız "*${trimmed}*" ile ilgili sistem kayıtlarımızda (Yedek Parça, Traktör Modeli, Müşteri, Servis veya Depo) herhangi bir veri bulunamadı.\n\n❓ **Bu konuyla ilgili yetkili ekibimize iletilmek üzere bir Talep / Şikayet kaydı oluşturayım mı?**`,
+        isNotFound: true,
+        suggestedSubject,
+        suggestedDescription: suggestedDesc,
+        ticketCreated: false
+      });
+    }
+
+    // If records found, format structured response strictly from DB
+    let replyText = `📊 **AgroPlus Veritabanı Bilgileri:**\n\n`;
+
+    if (dbResults.models.length > 0) {
+      replyText += `🚜 **Traktör & Makine Modelleri:**\n`;
+      dbResults.models.forEach(m => {
+        replyText += `• **${m.brand_name} ${m.model_name}** | Kategori: ${m.category_name || 'Traktör'} | Yıl: ${m.model_year || '-'} | Güç: ${m.engine_power_hp || '-'} HP\n`;
+      });
+      replyText += `\n`;
+    }
+
+    if (dbResults.parts.length > 0) {
+      replyText += `⚙️ **Yedek Parça & Depo Stokları:**\n`;
+      dbResults.parts.forEach(p => {
+        const stockStatus = p.total_stock <= p.minimum_stock ? `⚠️ Kritik (${p.total_stock} Adet)` : `✅ Mevcut (${p.total_stock} Adet)`;
+        replyText += `• **${p.part_name}** (\`${p.part_code}\`) - Marka: ${p.brand_name || 'Genel'} - Fiyat: ₺${Number(p.sale_price).toLocaleString('tr-TR')} - Stok: ${stockStatus}\n`;
+      });
+      replyText += `\n`;
+    }
+
+    if (dbResults.services.length > 0) {
+      replyText += `🛠️ **Servis & Bakım Kayıtları:**\n`;
+      dbResults.services.forEach(s => {
+        replyText += `• Servis No: \`${s.service_no}\` - Müşteri: **${s.customer_name || 'Kayıtlı'}** - İşlem: ${s.service_type || 'Bakım'} - Teknisyen: ${s.technician_name || 'Atanmadı'} - Durum: ${s.status}\n`;
+      });
+      replyText += `\n`;
+    }
+
+    if (dbResults.customers.length > 0) {
+      replyText += `👤 **Kayıtlı Müşteri Bilgileri:**\n`;
+      dbResults.customers.forEach(c => {
+        replyText += `• **${c.name}** (${c.customer_type === 'COMPANY' ? 'Kurumsal' : 'Bireysel'}) - Şehir: ${c.city || '-'} / ${c.district || '-'} - Tel: ${c.phone || '-'}\n`;
+      });
+      replyText += `\n`;
+    }
+
+    if (dbResults.quotes.length > 0) {
+      replyText += `📄 **Teklif Kayıtları:**\n`;
+      dbResults.quotes.forEach(q => {
+        replyText += `• Teklif No: \`${q.quote_no}\` - Müşteri: **${q.customer_name}** - Tutar: ₺${Number(q.grand_total).toLocaleString('tr-TR')} - Durum: ${q.status}\n`;
+      });
+      replyText += `\n`;
+    }
+
+    replyText += `💡 *Tüm veriler canlı MariaDB veritabanından anlık çekilmiştir.*`;
+
+    // Clear any pending ticket if new search returned results
+    pendingTicketSessions.delete(sessionId);
+
+    return res.json({
+      reply: replyText,
+      isNotFound: false,
+      ticketCreated: false
+    });
+
+  } catch (error) {
+    console.error('AI assistant chat error:', error);
+    res.status(500).json({ reply: 'Bağlantı sağlanamadı, lütfen tekrar deneyin.' });
+  }
+});
+
+// Explicit Ticket Creation Endpoint
+app.post('/api/ai-assistant/create-ticket', async (req, res) => {
+  try {
+    const { subject, description, priority = 'MEDIUM', ticket_type = 'REQUEST' } = req.body;
+    const ticketNo = `TLP-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+
+    let customerId = 1;
+    const [[cust]] = await pool.query('SELECT id FROM customers LIMIT 1');
+    if (cust) customerId = cust.id;
+
+    await pool.query(`
+      INSERT INTO requests_complaints (ticket_no, customer_id, ticket_type, subject, description, priority, status)
+      VALUES (?, ?, ?, ?, ?, ?, 'OPEN');
+    `, [
+      ticketNo,
+      customerId,
+      ticket_type,
+      subject || 'AI Asistan Destek Talebi',
+      description || 'Kullanıcı talebi',
+      priority
+    ]);
+
+    res.json({
+      success: true,
+      ticketNo,
+      message: `Talebiniz başarıyla #${ticketNo} numarası ile sisteme kaydedildi.`
+    });
+  } catch (error) {
+    console.error('Ticket creation API error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 app.listen(port, () => {
   console.log(`MariaDB API running on http://localhost:${port}`);
 });
+
+
