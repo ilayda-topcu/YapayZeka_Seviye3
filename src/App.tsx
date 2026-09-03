@@ -4,7 +4,7 @@ import {
   LayoutDashboard, MapPinned, Menu, MoreHorizontal, Package, Plus, Search,
   Settings, ShoppingCart, Tractor, Users, Wrench, X, ArrowUpRight, TrendingUp,
   AlertTriangle, CheckCircle2, Warehouse, Sparkles, Zap, Check, AlertCircle, FileText,
-  Share2, MessageSquare, Layers, Clock, ShieldCheck, CheckCheck, Send, RotateCcw, Bot
+  Share2, MessageSquare, Layers, Clock, ShieldCheck, CheckCheck, Send, RotateCcw, Bot, Minus
 } from 'lucide-react'
 import FieldWorks from './FieldWorks'
 import SocialMediaAgent from './SocialMediaAgent'
@@ -1241,39 +1241,39 @@ function DetailPage({
     {/* 1. Servis & Bakım Derin Bağlantı Modalı */}
     {serviceModal && (
       <div className="modal-backdrop" onClick={() => setServiceModal(null)}>
-        <div className="task-modal" style={{ maxWidth: 700 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-          <div className="modal-header">
+        <div className="modal-saas-card" style={{ maxWidth: 700 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+          <div className="modal-saas-header">
             <div>
-              <span className="eyebrow">SERVİS KAYDI #{serviceModal.no}</span>
-              <h2>{serviceModal.title}</h2>
+              <span className="eyebrow" style={{ color: '#059669' }}>SERVİS KAYDI #{serviceModal.no}</span>
+              <h2 style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 700, color: '#111827' }}>{serviceModal.title}</h2>
             </div>
             <button type="button" className="modal-close" onClick={() => setServiceModal(null)}>✕</button>
           </div>
-          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '20px 24px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-              <div style={{ padding: 10, background: '#f8faf8', borderRadius: 8, border: '1px solid #e5ebe5' }}>
-                <small style={{ fontSize: 10, color: '#728478', fontWeight: 700 }}>ARAÇ / MAKİNE</small>
-                <b style={{ display: 'block', fontSize: 12, color: '#143e2c', marginTop: 2 }}>{serviceModal.machine}</b>
+          <div className="modal-saas-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+              <div style={{ padding: '12px 14px', background: '#f8faf8', borderRadius: 12, border: '1px solid #e5ebe5' }}>
+                <small style={{ fontSize: 10, color: '#728478', fontWeight: 700, letterSpacing: '0.5px' }}>ARAÇ / MAKİNE</small>
+                <b style={{ display: 'block', fontSize: 13, color: '#143e2c', marginTop: 3 }}>{serviceModal.machine}</b>
               </div>
-              <div style={{ padding: 10, background: '#f8faf8', borderRadius: 8, border: '1px solid #e5ebe5' }}>
-                <small style={{ fontSize: 10, color: '#728478', fontWeight: 700 }}>MÜŞTERİ BİLGİSİ</small>
-                <b style={{ display: 'block', fontSize: 12, color: '#143e2c', marginTop: 2 }}>{serviceModal.customer}</b>
+              <div style={{ padding: '12px 14px', background: '#f8faf8', borderRadius: 12, border: '1px solid #e5ebe5' }}>
+                <small style={{ fontSize: 10, color: '#728478', fontWeight: 700, letterSpacing: '0.5px' }}>MÜŞTERİ BİLGİSİ</small>
+                <b style={{ display: 'block', fontSize: 13, color: '#143e2c', marginTop: 3 }}>{serviceModal.customer}</b>
               </div>
-              <div style={{ padding: 10, background: '#e8f5e9', borderRadius: 8, border: '1px solid #c8e6c9' }}>
-                <small style={{ fontSize: 10, color: '#2e7d32', fontWeight: 700 }}>SERVİS DURUMU</small>
-                <b style={{ display: 'block', fontSize: 12, color: '#2e7d32', marginTop: 2 }}>✓ {serviceModal.status}</b>
+              <div style={{ padding: '12px 14px', background: '#e8f5e9', borderRadius: 12, border: '1px solid #c8e6c9' }}>
+                <small style={{ fontSize: 10, color: '#2e7d32', fontWeight: 700, letterSpacing: '0.5px' }}>SERVİS DURUMU</small>
+                <b style={{ display: 'block', fontSize: 13, color: '#2e7d32', marginTop: 3 }}>✓ {serviceModal.status}</b>
               </div>
             </div>
 
-            <div style={{ border: '1px solid #edf2ee', borderRadius: 10, padding: 14, background: '#fff' }}>
-              <b style={{ display: 'block', fontSize: 12, color: '#143e2c', marginBottom: 8 }}>📋 500 Saat Periyodik Bakım Kontrol Listesi</b>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: 14, padding: 16, background: '#ffffff' }}>
+              <b style={{ display: 'block', fontSize: 13, color: '#111827', marginBottom: 10 }}>📋 500 Saat Periyodik Bakım Kontrol Listesi</b>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {serviceModal.checklists?.map((chk: any, idx: number) => (
-                  <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#334', cursor: 'pointer' }}>
+                  <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#374151', cursor: 'pointer' }}>
                     <input
                       type="checkbox"
                       defaultChecked={chk.done}
-                      style={{ accentColor: '#2e7d32' }}
+                      style={{ width: 16, height: 16, accentColor: '#059669', cursor: 'pointer' }}
                     />
                     <span>{chk.item}</span>
                   </label>
@@ -1281,22 +1281,23 @@ function DetailPage({
               </div>
             </div>
 
-            <div style={{ border: '1px solid #edf2ee', borderRadius: 10, padding: 14, background: '#fbfdfb' }}>
-              <b style={{ display: 'block', fontSize: 12, color: '#143e2c', marginBottom: 6 }}>📦 Gerekli OEM Parçalar &amp; Yağlar</b>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: 14, padding: 16, background: '#f9fafb' }}>
+              <b style={{ display: 'block', fontSize: 13, color: '#111827', marginBottom: 8 }}>📦 Gerekli OEM Parçalar &amp; Yağlar</b>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {serviceModal.requiredParts?.map((p: string, idx: number) => (
-                  <span key={idx} className="preset-chip" style={{ fontSize: 11 }}>
+                  <span key={idx} className="preset-chip" style={{ fontSize: 12, padding: '4px 10px' }}>
                     {p}
                   </span>
                 ))}
               </div>
             </div>
           </div>
-          <div className="modal-footer">
-            <button type="button" className="cancel-btn" onClick={() => setServiceModal(null)}>Kapat</button>
+          <div className="modal-saas-footer">
+            <button type="button" className="btn-saas-cancel" onClick={() => setServiceModal(null)}>Kapat</button>
             <button
               type="button"
-              className="primary"
+              className="btn-saas-primary"
+              style={{ background: '#059669', boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)' }}
               onClick={() => {
                 setServiceModal(null)
                 setFeedbackAlert({
@@ -1315,56 +1316,99 @@ function DetailPage({
     {/* 2. Kritik Stok Tedarik Modalı */}
     {stockOrderModal && (
       <div className="modal-backdrop" onClick={() => setStockOrderModal(null)}>
-        <div className="task-modal" style={{ maxWidth: 580 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-          <div className="modal-header">
+        <div className="modal-saas-card" style={{ maxWidth: 600 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+          <div className="modal-saas-header">
             <div>
-              <span className="eyebrow">KRİTİK STOK SİPARİŞİ · SKU: {stockOrderModal.sku}</span>
-              <h2>Tedarikçiden Hızlı Sipariş Oluştur</h2>
+              <span className="eyebrow" style={{ color: '#dc2626' }}>KRİTİK STOK SİPARİŞİ · SKU: {stockOrderModal.sku}</span>
+              <h2 style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 700, color: '#111827' }}>Tedarikçiden Hızlı Sipariş Oluştur</h2>
             </div>
             <button type="button" className="modal-close" onClick={() => setStockOrderModal(null)}>✕</button>
           </div>
-          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '20px 24px' }}>
-            <div style={{ padding: 12, backgroundColor: '#ffebee', border: '1px solid #ffcdd2', borderRadius: 8, color: '#c62828', fontSize: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
-              <AlertTriangle size={18} />
+          <div className="modal-saas-body">
+            {/* Warning Pill Alert */}
+            <div className="saas-alert-danger">
+              <AlertTriangle size={18} className="flex-shrink-0" />
               <span>Mevcut stok <b>{stockOrderModal.currentStock} adet</b> ile minimum kritik eşiğin (10 adet) altındadır.</span>
             </div>
 
-            <div className="form-grid">
-              <label>
-                Parça Adı &amp; Kodu
-                <input value={stockOrderModal.productName} readOnly style={{ background: '#f5f5f5' }} />
-              </label>
-              <label>
-                Tedarikçi Firma
-                <input value={stockOrderModal.supplier} readOnly style={{ background: '#f5f5f5' }} />
-              </label>
-            </div>
-
-            <div className="form-grid">
-              <label>
-                Sipariş Edilecek Adet
+            {/* 2-Column Grid */}
+            <div className="grid-2col-saas">
+              {/* 1. Parça Adı & Kodu */}
+              <div>
+                <label className="form-label-saas">Parça Adı &amp; Kodu</label>
                 <input
-                  type="number"
-                  value={stockOrderModal.orderQty}
-                  onChange={(e) => setStockOrderModal({ ...stockOrderModal, orderQty: Number(e.target.value) })}
+                  type="text"
+                  className="form-input-saas form-input-readonly"
+                  value={stockOrderModal.productName}
+                  readOnly
                 />
-              </label>
-              <label>
-                Birim Fiyat &amp; Toplam
-                <input value={`${stockOrderModal.unitPrice} (Toplam: ₺${(stockOrderModal.orderQty * 420).toLocaleString('tr-TR')})`} readOnly style={{ background: '#f5f5f5', fontWeight: 700 }} />
-              </label>
-            </div>
+              </div>
 
-            <label>
-              Teslimat Deposu
-              <input value="Merkez Yedek Parça Deposu - Raf: C-14" readOnly style={{ background: '#f5f5f5' }} />
-            </label>
+              {/* 2. Tedarikçi Firma */}
+              <div>
+                <label className="form-label-saas">Tedarikçi Firma</label>
+                <input
+                  type="text"
+                  className="form-input-saas form-input-readonly"
+                  value={stockOrderModal.supplier}
+                  readOnly
+                />
+              </div>
+
+              {/* 3. Sipariş Edilecek Adet */}
+              <div>
+                <label className="form-label-saas">Sipariş Edilecek Adet</label>
+                <div className="stepper-wrap-saas">
+                  <button
+                    type="button"
+                    className="stepper-btn-saas"
+                    onClick={() => setStockOrderModal({ ...stockOrderModal, orderQty: Math.max(1, (stockOrderModal.orderQty || 1) - 1) })}
+                  >
+                    <Minus size={14} />
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    className="stepper-input-saas"
+                    value={stockOrderModal.orderQty}
+                    onChange={(e) => setStockOrderModal({ ...stockOrderModal, orderQty: Math.max(1, Number(e.target.value)) })}
+                  />
+                  <button
+                    type="button"
+                    className="stepper-btn-saas"
+                    onClick={() => setStockOrderModal({ ...stockOrderModal, orderQty: (stockOrderModal.orderQty || 1) + 1 })}
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+              </div>
+
+              {/* 4. Birim Fiyat & Toplam Tutar */}
+              <div>
+                <label className="form-label-saas">Birim Fiyat &amp; Toplam Tutar</label>
+                <div className="price-calc-box-saas">
+                  <span className="unit-price-text">{stockOrderModal.unitPrice} / adet</span>
+                  <span className="grand-total-text">Toplam: ₺{((stockOrderModal.orderQty || 1) * 420).toLocaleString('tr-TR')}</span>
+                </div>
+              </div>
+
+              {/* 5. Teslimat Deposu (Full Width) */}
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label className="form-label-saas">Teslimat Deposu</label>
+                <select className="form-select-saas" defaultValue="Merkez">
+                  <option value="Merkez">Merkez Yedek Parça Deposu (Raf: C-14)</option>
+                  <option value="Marmara">Marmara Bölge Lojistik Deposu (Raf: A-03)</option>
+                  <option value="Ege">Ege Servis &amp; Yedek Parça Deposu (Raf: D-08)</option>
+                  <option value="İç Anadolu">İç Anadolu Ana Antrepo (Raf: B-12)</option>
+                </select>
+              </div>
+            </div>
           </div>
-          <div className="modal-footer">
-            <button type="button" className="cancel-btn" onClick={() => setStockOrderModal(null)}>Vazgeç</button>
+          <div className="modal-saas-footer">
+            <button type="button" className="btn-saas-cancel" onClick={() => setStockOrderModal(null)}>Vazgeç</button>
             <button
               type="button"
-              className="primary"
+              className="btn-saas-primary"
               onClick={() => {
                 setStockOrderModal(null)
                 setFeedbackAlert({
@@ -1383,55 +1427,74 @@ function DetailPage({
     {/* 3. Müşteri Şikayet & Destek Yanıtlama Modalı */}
     {ticketModal && (
       <div className="modal-backdrop" onClick={() => setTicketModal(null)}>
-        <div className="task-modal" style={{ maxWidth: 620 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-          <div className="modal-header">
+        <div className="modal-saas-card" style={{ maxWidth: 620 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+          <div className="modal-saas-header">
             <div>
-              <span className="eyebrow">ŞİKAYET &amp; TALEP #{ticketModal.no}</span>
-              <h2>Talebi Yanıtla &amp; Servise Ata</h2>
+              <span className="eyebrow" style={{ color: '#e65100' }}>ŞİKAYET &amp; TALEP #{ticketModal.no}</span>
+              <h2 style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 700, color: '#111827' }}>Talebi Yanıtla &amp; Servise Ata</h2>
             </div>
             <button type="button" className="modal-close" onClick={() => setTicketModal(null)}>✕</button>
           </div>
-          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '20px 24px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 10 }}>
-              <div style={{ padding: 10, background: '#f8faf8', borderRadius: 8, border: '1px solid #e5ebe5' }}>
-                <small style={{ fontSize: 10, color: '#728478', fontWeight: 700 }}>MÜŞTERİ</small>
-                <b style={{ display: 'block', fontSize: 12, color: '#143e2c', marginTop: 2 }}>{ticketModal.customer} ({ticketModal.phone})</b>
+          <div className="modal-saas-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Top Customer Info & Priority */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 12 }}>
+              <div style={{ padding: '12px 14px', background: '#f8faf8', borderRadius: 12, border: '1px solid #e5ebe5' }}>
+                <small style={{ fontSize: 10, color: '#728478', fontWeight: 700, letterSpacing: '0.5px' }}>MÜŞTERİ BİLGİSİ</small>
+                <b style={{ display: 'block', fontSize: 13, color: '#143e2c', marginTop: 3 }}>{ticketModal.customer} ({ticketModal.phone})</b>
               </div>
-              <div style={{ padding: 10, background: '#fff3e0', borderRadius: 8, border: '1px solid #ffe0b2' }}>
-                <small style={{ fontSize: 10, color: '#e65100', fontWeight: 700 }}>ÖNCELİK DURUMU</small>
-                <b style={{ display: 'block', fontSize: 12, color: '#e65100', marginTop: 2 }}>⚡ {ticketModal.priority}</b>
+              <div style={{ padding: '12px 14px', background: '#fff3e0', borderRadius: 12, border: '1px solid #ffe0b2' }}>
+                <small style={{ fontSize: 10, color: '#e65100', fontWeight: 700, letterSpacing: '0.5px' }}>ÖNCELİK DURUMU</small>
+                <b style={{ display: 'block', fontSize: 13, color: '#e65100', marginTop: 3 }}>⚡ {ticketModal.priority}</b>
               </div>
             </div>
 
-            <div style={{ padding: 12, background: '#fdfaf5', borderRadius: 8, border: '1px solid #fae6cf' }}>
-              <b style={{ display: 'block', fontSize: 12, color: '#b45309', marginBottom: 4 }}>Arıza Bildirimi Detayı:</b>
-              <p style={{ margin: 0, fontSize: 12, color: '#554', lineHeight: 1.45 }}>{ticketModal.description}</p>
+            {/* Description Card */}
+            <div style={{ padding: '12px 14px', background: '#fffbeb', borderRadius: 12, border: '1px solid #fde68a' }}>
+              <b style={{ display: 'block', fontSize: 12, color: '#92400e', marginBottom: 4 }}>Arıza &amp; Talep Bildirimi Detayı:</b>
+              <p style={{ margin: 0, fontSize: 12.5, color: '#78350f', lineHeight: 1.5 }}>{ticketModal.description}</p>
             </div>
 
-            <label>
-              Atanan Teknisyen / Ekip
-              <input value={ticketModal.assignedTech} readOnly style={{ background: '#f5f5f5' }} />
-            </label>
+            {/* 1. Atanan Teknisyen / Ekip */}
+            <div>
+              <label className="form-label-saas">Atanan Teknisyen / Ekip</label>
+              <select
+                className="form-select-saas"
+                defaultValue={ticketModal.assignedTech || "Saha Ekip 2 (Mustafa Yılmaz)"}
+                onChange={(e) => setTicketModal({ ...ticketModal, assignedTech: e.target.value })}
+              >
+                <option value="Hasan Usta (Mobil Servis Ekip 1)">Hasan Usta (Mobil Servis Ekip 1)</option>
+                <option value="Ahmet Usta (Atölye Başteknisyen)">Ahmet Usta (Atölye Başteknisyen)</option>
+                <option value="Saha Ekip 2 (Mustafa Yılmaz)">Saha Ekip 2 (Mustafa Yılmaz)</option>
+                <option value="Kemal Yıldız (Elektrik & Diagnostik Uzmanı)">Kemal Yıldız (Elektrik &amp; Diagnostik Uzmanı)</option>
+              </select>
+            </div>
 
-            <label>
-              Müşteriye İletilecek Yanıt Mesajı (SMS &amp; E-Posta)
+            {/* 2. Müşteriye İletilecek Yanıt Mesajı */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <label className="form-label-saas" style={{ margin: 0 }}>Müşteriye İletilecek Yanıt Mesajı (SMS &amp; E-Posta)</label>
+                <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>Max 250 karakter ({250 - (ticketModal.replyText?.length || 0)} kaldı)</span>
+              </div>
               <textarea
+                className="form-textarea-saas"
                 rows={4}
+                maxLength={250}
                 value={ticketModal.replyText}
                 onChange={(e) => setTicketModal({ ...ticketModal, replyText: e.target.value })}
+                placeholder="Müşteriye bilgilendirme SMS ve e-posta metnini giriniz..."
               />
-            </label>
+            </div>
           </div>
-          <div className="modal-footer">
-            <button type="button" className="cancel-btn" onClick={() => setTicketModal(null)}>Vazgeç</button>
+          <div className="modal-saas-footer">
+            <button type="button" className="btn-saas-cancel" onClick={() => setTicketModal(null)}>Vazgeç</button>
             <button
               type="button"
-              className="primary"
+              className="btn-saas-primary"
               onClick={() => {
                 setTicketModal(null)
                 setFeedbackAlert({
                   type: 'success',
-                  message: `✅ Mehmet Kaya'nın arıza talebine yanıt iletildi ve Saha Ekip 2 görevi onaylandı!`
+                  message: `✅ ${ticketModal.customer} müşterisinin arıza talebine yanıt iletildi ve ${ticketModal.assignedTech || 'Saha Ekibi'} görevi onaylandı!`
                 })
               }}
             >
