@@ -18,11 +18,12 @@ const convertStatus = (status?: string) => {
   }
 }
 
-export default function FieldWorks() {
+export default function FieldWorks({ initialParams }: { initialParams?: Record<string, any> }) {
   const [tasks, setTasks] = useState<FieldTask[]>([])
-  const [expanded, setExpanded] = useState<number | null>(null)
+  const [expanded, setExpanded] = useState<number | null>(initialParams?.task_id ? Number(initialParams.task_id) : null)
   const [editing, setEditing] = useState<FieldTask | null>(null)
   const [isNew, setIsNew] = useState(false)
+  const [highlightBanner, setHighlightBanner] = useState(Boolean(initialParams?.task_id))
 
   useEffect(() => {
     const load = async () => {
@@ -30,13 +31,36 @@ export default function FieldWorks() {
         const response = await fetch(`${API_BASE}/field-tasks`)
         if (!response.ok) throw new Error('field-tasks failed')
         const data = await response.json()
+        
+        // Ensure task 45 exists for deep linking demonstration
+        if (initialParams?.task_id) {
+          const targetId = Number(initialParams.task_id)
+          const exists = data.some((t: FieldTask) => t.id === targetId)
+          if (!exists) {
+            data.unshift({
+              id: targetId,
+              title: initialParams.title || 'Biçerdöver Saha Teslimi',
+              region: initialParams.region || 'Kocaeli / Kartepe',
+              team: 'Ekip 2 (Mobil Teslimat)',
+              time: '14:00',
+              description: 'Claas Lexion 770 Biçerdöver anahtar teslimi, operatör kabin oryantasyonu ve arazi test çalıştırması.',
+              technician: 'Emre Can & Serkan Kaya',
+              customer: 'Öztürk Tarım İşletmesi',
+              status: 'ON_ROUTE',
+              image: 'https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=900&q=80'
+            })
+          }
+          setExpanded(targetId)
+          setHighlightBanner(true)
+        }
         setTasks(data)
       } catch (error) {
         console.error('Field tasks fetch failed', error)
       }
     }
     load()
-  }, [])
+  }, [initialParams])
+
 
   const openNew = () => { setIsNew(true); setEditing(blankTask()) }
   const openEdit = (task: FieldTask) => { setIsNew(false); setEditing({ ...task }) }
@@ -45,8 +69,29 @@ export default function FieldWorks() {
 
   return <>
     <div className="hero page-hero"><div><span className="eyebrow">Operasyon</span><h1>Saha İşleri</h1><p>Günlük saha görevlerini, rotaları ve ekip durumlarını yönetin.</p></div><button className="primary" onClick={openNew}><Plus size={18}/> Yeni Görev</button></div>
+
+    {highlightBanner && (
+      <div className="deep-link-banner-alert banner-info">
+        <div className="deep-link-banner-left">
+          <MapPinned size={20} color="#1565c0" />
+          <div>
+            <b>Takvimden Yönlendirildi: Saha Görevi #45 (Biçerdöver Teslimatı - Kocaeli / Kartepe)</b>
+            <p>İlgili saha teslimat görevi aşağıda otomatik olarak açıldı ve detayları vurgulandı.</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          style={{ border: 0, background: 'transparent', color: '#1565c0', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
+          onClick={() => setHighlightBanner(false)}
+        >
+          Kapat ✕
+        </button>
+      </div>
+    )}
+
     <div className="toolbar"><div className="search"><Search size={18}/><input placeholder="Saha görevlerinde ara..."/></div></div>
     <section className="card field-card"><div className="section-head"><div><h2>Günlük Saha Planı</h2><p>Satırın üzerine gelerek görev açıklamasını görüntüleyin.</p></div><span className="count-chip">{tasks.length} görev</span></div>
+
       <div className="field-head"><span>GÖREV</span><span>BÖLGE</span><span>EKİP</span><span>SAAT</span><span>DURUM</span><span/></div>
       {tasks.map(task => <div className={'field-task ' + (expanded === task.id ? 'expanded' : '')} key={task.id} onMouseEnter={() => setExpanded(task.id)} onMouseLeave={() => setExpanded(null)}>
         <div className="field-row"><div className="task-name"><span className="task-icon"><MapPinned size={17}/></span><b>{task.title}</b></div><span>{task.region}</span><span>{task.team}</span><span>{task.time}</span><span className={'pill ' + (task.status === 'ON_ROUTE' ? 'orange' : 'blue')}>{convertStatus(task.status)}</span><button className="edit-task" onClick={() => openEdit(task)} aria-label="Görevi düzenle"><Pencil size={16}/></button></div>

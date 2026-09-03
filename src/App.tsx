@@ -1,34 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  Bell, Boxes, Building2, CalendarDays, ChevronDown, CircleHelp,
+  Bell, Boxes, Building2, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, CircleHelp,
   LayoutDashboard, MapPinned, Menu, MoreHorizontal, Package, Plus, Search,
   Settings, ShoppingCart, Tractor, Users, Wrench, X, ArrowUpRight, TrendingUp,
   AlertTriangle, CheckCircle2, Warehouse, Sparkles, Zap, Check, AlertCircle, FileText,
-  Share2, MessageSquare, Layers
+  Share2, MessageSquare, Layers, Clock, ShieldCheck, CheckCheck, Send, RotateCcw
 } from 'lucide-react'
 import FieldWorks from './FieldWorks'
 import SocialMediaAgent from './SocialMediaAgent'
 import OrdersAndQuotes from './OrdersAndQuotes'
+import AgroCalendarPopover from './AgroCalendarPopover'
+import AgroNotificationDrawer, { INITIAL_NOTIFICATIONS } from './AgroNotificationDrawer'
+import FullCalendarModal from './FullCalendarModal'
+import UserProfileMenu from './UserProfileMenu'
+import AccountDetailsModal from './AccountDetailsModal'
+import PreferencesModal from './PreferencesModal'
+import { Page, NotificationItem } from './types/navigation'
+
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api'
-
-type Page =
-  | 'Genel Bakış'
-  | 'Markalar'
-  | 'Ürünler'
-  | 'Stok Takibi'
-  | 'Müşteriler'
-  | 'Sipariş & Teklifler'
-  | 'Teklif Kontrolü (AI)'
-  | 'Sosyal Medya İçeriği Üret'
-  | 'Tamir & Bakım'
-  | 'Şikayet & Talep'
-  | 'Depolar'
-  | 'Analiz & Raporlama'
-  | 'Saha İşleri'
-  | 'Şubeler'
-  | 'Kullanıcı Yönetimi'
-  | 'Yapay Zeka Ajanları'
 
 type DataTable = { columns: string[]; rows: string[][] }
 
@@ -392,20 +382,95 @@ const fallbackQuoteControlData = {
   ]
 }
 
-function QuoteControlPage() {
-  const [data, setData] = useState<any>(fallbackQuoteControlData)
-  const [selectedQuote, setSelectedQuote] = useState<any>(null)
+function QuoteControlPage({ initialParams }: { initialParams?: Record<string, any> }) {
+  const [data, setData] = useState<any>(() => {
+    if (initialParams?.quote_id === '892' || initialParams?.model) {
+      const aiQuote = {
+        id: 892,
+        quote_no: 'TKL-0892',
+        customer: 'Yeşilırmak Tarım A.Ş.',
+        customer_email: 'info@yesilirmaktarim.com',
+        total: '₺1.850.000',
+        raw_total: 1850000,
+        item_count: 1,
+        status: 'BEKLEMEDE',
+        validity: '2026-09-30',
+        quote_date: '2026-09-01',
+        ai_recommendation: 'APPROVE',
+        ai_confidence: 96,
+        ai_reason: '2018 Case IH Maxxum 125 modeli için piyasa değerleme analizi tamamlandı. İkinci el OEM amortisman çarpanı uygun, kar marjı %18,2 (hedef %15 üzeri), müşteri kredi risk skoru A+ seviyesindedir.',
+        ai_agent_name: 'Fiyat & Piyasa Analiz Ajanı'
+      }
+      return {
+        ...fallbackQuoteControlData,
+        quotes: [aiQuote, ...fallbackQuoteControlData.quotes]
+      }
+    }
+    return fallbackQuoteControlData
+  })
+
+  const [selectedQuote, setSelectedQuote] = useState<any>(() => {
+    if (initialParams?.quote_id === '892' || initialParams?.model) {
+      return {
+        id: 892,
+        quote_no: 'TKL-0892',
+        customer: 'Yeşilırmak Tarım A.Ş.',
+        customer_email: 'info@yesilirmaktarim.com',
+        total: '₺1.850.000',
+        raw_total: 1850000,
+        item_count: 1,
+        status: 'BEKLEMEDE',
+        validity: '2026-09-30',
+        quote_date: '2026-09-01',
+        ai_recommendation: 'APPROVE',
+        ai_confidence: 96,
+        ai_reason: '2018 Case IH Maxxum 125 modeli için piyasa değerleme analizi tamamlandı. İkinci el OEM amortisman çarpanı uygun, kar marjı %18,2 (hedef %15 üzeri), müşteri kredi risk skoru A+ seviyesindedir.',
+        ai_agent_name: 'Fiyat & Piyasa Analiz Ajanı'
+      }
+    }
+    return fallbackQuoteControlData.quotes[0]
+  })
+
   const [processing, setProcessing] = useState(false)
   const [batchRunning, setBatchRunning] = useState(false)
-  const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(() => {
+    if (initialParams?.quote_id === '892' || initialParams?.model) {
+      return {
+        type: 'success',
+        message: `🤖 Bildirimden Yönlendirildi: 2018 Case IH Maxxum 125 için AI Fiyat Analizi başarıyla yüklendi ve incelenmeye hazır!`
+      }
+    }
+    return null
+  })
 
   const loadData = async () => {
     try {
       const response = await fetchJson<any>('/quote-control')
       if (response && response.quotes) {
-        setData(response)
-        if (response.quotes.length > 0 && !selectedQuote) {
-          setSelectedQuote(response.quotes[0])
+        if (initialParams?.quote_id === '892') {
+          const aiQuote = {
+            id: 892,
+            quote_no: 'TKL-0892',
+            customer: 'Yeşilırmak Tarım A.Ş.',
+            customer_email: 'info@yesilirmaktarim.com',
+            total: '₺1.850.000',
+            raw_total: 1850000,
+            item_count: 1,
+            status: 'BEKLEMEDE',
+            validity: '2026-09-30',
+            quote_date: '2026-09-01',
+            ai_recommendation: 'APPROVE',
+            ai_confidence: 96,
+            ai_reason: '2018 Case IH Maxxum 125 modeli için piyasa değerleme analizi tamamlandı. İkinci el OEM amortisman çarpanı uygun, kar marjı %18,2 (hedef %15 üzeri), müşteri kredi risk skoru A+ seviyesindedir.',
+            ai_agent_name: 'Fiyat & Piyasa Analiz Ajanı'
+          }
+          setData({ ...response, quotes: [aiQuote, ...response.quotes] })
+          setSelectedQuote(aiQuote)
+        } else {
+          setData(response)
+          if (response.quotes.length > 0 && !selectedQuote) {
+            setSelectedQuote(response.quotes[0])
+          }
         }
       }
     } catch (error) {
@@ -415,7 +480,8 @@ function QuoteControlPage() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [initialParams])
+
 
   const handleApprove = async (quote: any) => {
     setProcessing(true)
@@ -867,8 +933,126 @@ function AiAgentsPage() {
   </>
 }
 
-function DetailPage({ page }: { page: Exclude<Page, 'Genel Bakış'> }) {
+function DetailPage({
+  page,
+  params,
+  onNavigate
+}: {
+  page: Exclude<Page, 'Genel Bakış'>
+  params?: Record<string, any>
+  onNavigate: (page: Page, params?: Record<string, any>) => void
+}) {
   const [data, setData] = useState<DataTable>({ columns: [], rows: [] })
+  
+  // Modals for deep-linked actions
+  const [serviceModal, setServiceModal] = useState<any>(() => {
+    if (page === 'Tamir & Bakım' && (params?.record_id || params?.action)) {
+      return {
+        id: params?.record_id || '102',
+        no: params?.service_no || 'SRV-20260901-0102',
+        title: 'Traktör 500 Saat Bakımı - Ahmet Yılmaz',
+        machine: 'New Holland T5.110 (Şasi No: NH-884920)',
+        customer: 'Ahmet Yılmaz (0532 555 12 34)',
+        technician: 'Selin Aksoy & Hasan Usta (Ekip 2)',
+        status: params?.action === 'start' ? 'İŞLEMDE (BAŞLATILDI)' : 'BEKLEMEDE',
+        station: 'Merkez Atölye - İstasyon 2',
+        checklists: [
+          { item: 'Motor yağı ve OEM yağ filtresi değişimi', done: true },
+          { item: 'Hava ve yakıt filtresi temizlik & kontrolü', done: true },
+          { item: 'Hidrolik sistem basınç ve kaçak testi', done: false },
+          { item: 'Ön/arka aks diferansiyel yağ seviyesi kontrolü', done: false },
+          { item: 'Fren balatası kalınlık ölçümü & test sürüşü', done: false }
+        ],
+        requiredParts: ['Orijinal Yağ Filtresi (NH-342)', '15W-40 Traktör Motor Yağı (12L)', 'Hidrolik Filtre Kartuşu']
+      }
+    }
+    return null
+  })
+
+  const [stockOrderModal, setStockOrderModal] = useState<any>(() => {
+    if (page === 'Stok Takibi' && (params?.filter === 'critical' || params?.sku)) {
+      return {
+        sku: params?.sku || 'NH-342',
+        productName: params?.product_name || 'Orijinal Yağ Filtresi (NH-342)',
+        currentStock: 2,
+        minStock: 10,
+        supplier: 'CNH Industrial Orijinal Parça Dağıtım A.Ş.',
+        orderQty: 20,
+        unitPrice: '₺420,00',
+        total: '₺8.400,00'
+      }
+    }
+    return null
+  })
+
+  const [ticketModal, setTicketModal] = useState<any>(() => {
+    if (page === 'Şikayet & Talep' && params?.ticket_id) {
+      return {
+        id: params?.ticket_id || '14',
+        no: 'TLP-20260901-0014',
+        customer: params?.customer || 'Mehmet Kaya',
+        phone: '0544 321 98 76',
+        subject: params?.subject || 'Hidrolik Arıza & Basınç Kaybı',
+        priority: 'Acil / Yüksek',
+        status: 'AÇIK',
+        description: 'New Holland T6.180 traktör arka hidrolik kollarında yük altında basınç düşüklüğü ve valf bloğunda sızıntı tespit edildi. Tarlada ekim işlemi durdu, acil servis teknisyeni talep ediliyor.',
+        replyText: 'Merhaba Mehmet Bey, servis ekibimiz (Ekip 2) acil statüsünde yönlendirilmiştir. Teknisyenimiz 45 dakika içinde tarlanıza ulaşacaktır.',
+        assignedTech: 'Hasan Usta (Mobil Servis #2)'
+      }
+    }
+    return null
+  })
+
+  const [feedbackAlert, setFeedbackAlert] = useState<{ type: 'success' | 'info'; message: string } | null>(null)
+
+  useEffect(() => {
+    if (page === 'Tamir & Bakım' && params?.record_id) {
+      setServiceModal({
+        id: params.record_id,
+        no: params.service_no || 'SRV-20260901-0102',
+        title: 'Traktör 500 Saat Bakımı - Ahmet Yılmaz',
+        machine: 'New Holland T5.110 (Şasi No: NH-884920)',
+        customer: 'Ahmet Yılmaz (0532 555 12 34)',
+        technician: 'Selin Aksoy & Hasan Usta (Ekip 2)',
+        status: params.action === 'start' ? 'İŞLEMDE (BAŞLATILDI)' : 'BEKLEMEDE',
+        station: 'Merkez Atölye - İstasyon 2',
+        checklists: [
+          { item: 'Motor yağı ve OEM yağ filtresi değişimi', done: true },
+          { item: 'Hava ve yakıt filtresi temizlik & kontrolü', done: true },
+          { item: 'Hidrolik sistem basınç ve kaçak testi', done: false },
+          { item: 'Ön/arka aks diferansiyel yağ seviyesi kontrolü', done: false },
+          { item: 'Fren balatası kalınlık ölçümü & test sürüşü', done: false }
+        ],
+        requiredParts: ['Orijinal Yağ Filtresi (NH-342)', '15W-40 Traktör Motor Yağı (12L)', 'Hidrolik Filtre Kartuşu']
+      })
+    }
+    if (page === 'Stok Takibi' && (params?.filter === 'critical' || params?.sku)) {
+      setStockOrderModal({
+        sku: params.sku || 'NH-342',
+        productName: params.product_name || 'Orijinal Yağ Filtresi (NH-342)',
+        currentStock: 2,
+        minStock: 10,
+        supplier: 'CNH Industrial Orijinal Parça Dağıtım A.Ş.',
+        orderQty: 20,
+        unitPrice: '₺420,00',
+        total: '₺8.400,00'
+      })
+    }
+    if (page === 'Şikayet & Talep' && params?.ticket_id) {
+      setTicketModal({
+        id: params.ticket_id,
+        no: 'TLP-20260901-0014',
+        customer: params.customer || 'Mehmet Kaya',
+        phone: '0544 321 98 76',
+        subject: params.subject || 'Hidrolik Arıza & Basınç Kaybı',
+        priority: 'Acil / Yüksek',
+        status: 'AÇIK',
+        description: 'New Holland T6.180 traktör arka hidrolik kollarında yük altında basınç düşüklüğü ve valf bloğunda sızıntı tespit edildi. Tarlada ekim işlemi durdu, acil servis teknisyeni talep ediliyor.',
+        replyText: 'Merhaba Mehmet Bey, servis ekibimiz (Ekip 2) acil statüsünde yönlendirilmiştir. Teknisyenimiz 45 dakika içinde tarlanıza ulaşacaktır.',
+        assignedTech: 'Hasan Usta (Mobil Servis #2)'
+      })
+    }
+  }, [page, params])
 
   useEffect(() => {
     const endpointMap: Record<Exclude<Page, 'Genel Bakış'>, string> = {
@@ -913,108 +1097,700 @@ function DetailPage({ page }: { page: Exclude<Page, 'Genel Bakış'> }) {
       <div><span className="eyebrow">{meta.eyebrow}</span><h1>{meta.title}</h1><p>{meta.description}</p></div>
       <button className="primary"><Plus size={18} />{meta.action}</button>
     </div>
+
+    {/* Deep Link Banner Alert if navigated with query params */}
+    {params?.record_id && (
+      <div className="deep-link-banner-alert banner-success">
+        <div className="deep-link-banner-left">
+          <Wrench size={20} color="#2e7d32" />
+          <div>
+            <b>Takvimden Yönlendirildi: Servis Kaydı #{params.record_id} (Traktör 500 Saat Bakımı)</b>
+            <p>Servis operasyon kartı aşağıda otomatik olarak açıldı ve bakım süreci başlatıldı.</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="primary"
+          style={{ padding: '6px 12px', fontSize: 11 }}
+          onClick={() => setServiceModal(serviceModal)}
+        >
+          Operasyon Panelini Aç
+        </button>
+      </div>
+    )}
+
+    {params?.sku && (
+      <div className="deep-link-banner-alert banner-critical">
+        <div className="deep-link-banner-left">
+          <AlertTriangle size={20} color="#d32f2f" />
+          <div>
+            <b>Kritik Stok Bildiriminden Yönlendirildi: {params.sku} (Orijinal Yağ Filtresi)</b>
+            <p>Minimum stok eşiği (3 adet) altına düşüldü. Hızlı sipariş modülü tetiklendi.</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="primary"
+          style={{ padding: '6px 12px', fontSize: 11, backgroundColor: '#d32f2f' }}
+          onClick={() => setStockOrderModal(stockOrderModal)}
+        >
+          Sipariş Formunu Aç
+        </button>
+      </div>
+    )}
+
+    {params?.ticket_id && (
+      <div className="deep-link-banner-alert banner-info">
+        <div className="deep-link-banner-left">
+          <MessageSquare size={20} color="#1565c0" />
+          <div>
+            <b>Müşteri Şikayet Bildiriminden Yönlendirildi: Talep #{params.ticket_id} (Mehmet Kaya)</b>
+            <p>Acil hidrolik arıza bildirimi yanıt ve atama için hazırlandı.</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="primary"
+          style={{ padding: '6px 12px', fontSize: 11, backgroundColor: '#1565c0' }}
+          onClick={() => setTicketModal(ticketModal)}
+        >
+          Talebi Yanıtla
+        </button>
+      </div>
+    )}
+
+    {feedbackAlert && (
+      <div className={`deep-link-banner-alert ${feedbackAlert.type === 'success' ? 'banner-success' : 'banner-info'}`}>
+        <div className="deep-link-banner-left">
+          <CheckCircle2 size={18} />
+          <b>{feedbackAlert.message}</b>
+        </div>
+        <button
+          type="button"
+          style={{ border: 0, background: 'transparent', cursor: 'pointer', fontWeight: 700 }}
+          onClick={() => setFeedbackAlert(null)}
+        >
+          ✕
+        </button>
+      </div>
+    )}
+
     <div className="toolbar">
       <div className="search"><Search size={18} /><input placeholder={`${meta.title} içinde ara...`} /></div>
       <button className="filter"><Settings size={17} /> Filtrele <ChevronDown size={16} /></button>
     </div>
+
     <section className="card data-card">
       <div className="section-head"><div><h2>{meta.title} Listesi</h2><p>Toplam {data.rows.length} kayıt görüntüleniyor</p></div><button className="icon-btn"><MoreHorizontal size={20} /></button></div>
-      <div className="table-wrap"><table><thead><tr>{data.columns.map((c) => <th key={c}>{c}</th>)}<th></th></tr></thead><tbody>{data.rows.map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}<td><button className="more"><MoreHorizontal size={19} /></button></td></tr>)}</tbody></table></div>
+      <div className="table-wrap">
+        <table>
+          <thead><tr>{data.columns.map((c) => <th key={c}>{c}</th>)}<th>İşlem</th></tr></thead>
+          <tbody>
+            {data.rows.map((row, i) => (
+              <tr key={i}>
+                {row.map((cell, j) => (
+                  <td key={j}>
+                    {j === 3 && (cell === 'Tamamlandı' || cell === 'Aktif' || cell.includes('adet')) ? (
+                      <span className="pill green">{cell}</span>
+                    ) : (
+                      cell
+                    )}
+                  </td>
+                ))}
+                <td>
+                  <button
+                    className="more"
+                    onClick={() => {
+                      if (page === 'Tamir & Bakım') {
+                        setServiceModal({
+                          id: '102',
+                          no: row[0] || 'SRV-102',
+                          title: `${row[1] || 'Traktör Bakımı'}`,
+                          machine: row[1] || 'New Holland T5.110',
+                          customer: 'Ahmet Yılmaz',
+                          technician: row[2] || 'Selin Aksoy',
+                          status: 'İŞLEMDE',
+                          station: 'Merkez Atölye - İstasyon 2',
+                          checklists: [
+                            { item: 'Motor yağı ve filtre değişimi', done: true },
+                            { item: 'Hidrolik sistem basınç kontrolü', done: false },
+                            { item: 'Fren ve debriyaj testi', done: false }
+                          ],
+                          requiredParts: ['Orijinal Yağ Filtresi (NH-342)', 'Traktör Motor Yağı']
+                        })
+                      }
+                    }}
+                  >
+                    <MoreHorizontal size={19} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
+
+    {/* 1. Servis & Bakım Derin Bağlantı Modalı */}
+    {serviceModal && (
+      <div className="modal-backdrop" onClick={() => setServiceModal(null)}>
+        <div className="task-modal" style={{ maxWidth: 700 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+          <div className="modal-header">
+            <div>
+              <span className="eyebrow">SERVİS KAYDI #{serviceModal.no}</span>
+              <h2>{serviceModal.title}</h2>
+            </div>
+            <button type="button" className="modal-close" onClick={() => setServiceModal(null)}>✕</button>
+          </div>
+          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '20px 24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              <div style={{ padding: 10, background: '#f8faf8', borderRadius: 8, border: '1px solid #e5ebe5' }}>
+                <small style={{ fontSize: 10, color: '#728478', fontWeight: 700 }}>ARAÇ / MAKİNE</small>
+                <b style={{ display: 'block', fontSize: 12, color: '#143e2c', marginTop: 2 }}>{serviceModal.machine}</b>
+              </div>
+              <div style={{ padding: 10, background: '#f8faf8', borderRadius: 8, border: '1px solid #e5ebe5' }}>
+                <small style={{ fontSize: 10, color: '#728478', fontWeight: 700 }}>MÜŞTERİ BİLGİSİ</small>
+                <b style={{ display: 'block', fontSize: 12, color: '#143e2c', marginTop: 2 }}>{serviceModal.customer}</b>
+              </div>
+              <div style={{ padding: 10, background: '#e8f5e9', borderRadius: 8, border: '1px solid #c8e6c9' }}>
+                <small style={{ fontSize: 10, color: '#2e7d32', fontWeight: 700 }}>SERVİS DURUMU</small>
+                <b style={{ display: 'block', fontSize: 12, color: '#2e7d32', marginTop: 2 }}>✓ {serviceModal.status}</b>
+              </div>
+            </div>
+
+            <div style={{ border: '1px solid #edf2ee', borderRadius: 10, padding: 14, background: '#fff' }}>
+              <b style={{ display: 'block', fontSize: 12, color: '#143e2c', marginBottom: 8 }}>📋 500 Saat Periyodik Bakım Kontrol Listesi</b>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {serviceModal.checklists?.map((chk: any, idx: number) => (
+                  <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#334', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      defaultChecked={chk.done}
+                      style={{ accentColor: '#2e7d32' }}
+                    />
+                    <span>{chk.item}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ border: '1px solid #edf2ee', borderRadius: 10, padding: 14, background: '#fbfdfb' }}>
+              <b style={{ display: 'block', fontSize: 12, color: '#143e2c', marginBottom: 6 }}>📦 Gerekli OEM Parçalar &amp; Yağlar</b>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {serviceModal.requiredParts?.map((p: string, idx: number) => (
+                  <span key={idx} className="preset-chip" style={{ fontSize: 11 }}>
+                    {p}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="cancel-btn" onClick={() => setServiceModal(null)}>Kapat</button>
+            <button
+              type="button"
+              className="primary"
+              onClick={() => {
+                setServiceModal(null)
+                setFeedbackAlert({
+                  type: 'success',
+                  message: `✅ SRV-102 numaralı servis başarıyla tamamlandı ve iş emri arşive aktarıldı!`
+                })
+              }}
+            >
+              <CheckCircle2 size={16} /> Bakımı Tamamla &amp; Faturaya Aktar
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* 2. Kritik Stok Tedarik Modalı */}
+    {stockOrderModal && (
+      <div className="modal-backdrop" onClick={() => setStockOrderModal(null)}>
+        <div className="task-modal" style={{ maxWidth: 580 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+          <div className="modal-header">
+            <div>
+              <span className="eyebrow">KRİTİK STOK SİPARİŞİ · SKU: {stockOrderModal.sku}</span>
+              <h2>Tedarikçiden Hızlı Sipariş Oluştur</h2>
+            </div>
+            <button type="button" className="modal-close" onClick={() => setStockOrderModal(null)}>✕</button>
+          </div>
+          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '20px 24px' }}>
+            <div style={{ padding: 12, backgroundColor: '#ffebee', border: '1px solid #ffcdd2', borderRadius: 8, color: '#c62828', fontSize: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+              <AlertTriangle size={18} />
+              <span>Mevcut stok <b>{stockOrderModal.currentStock} adet</b> ile minimum kritik eşiğin (10 adet) altındadır.</span>
+            </div>
+
+            <div className="form-grid">
+              <label>
+                Parça Adı &amp; Kodu
+                <input value={stockOrderModal.productName} readOnly style={{ background: '#f5f5f5' }} />
+              </label>
+              <label>
+                Tedarikçi Firma
+                <input value={stockOrderModal.supplier} readOnly style={{ background: '#f5f5f5' }} />
+              </label>
+            </div>
+
+            <div className="form-grid">
+              <label>
+                Sipariş Edilecek Adet
+                <input
+                  type="number"
+                  value={stockOrderModal.orderQty}
+                  onChange={(e) => setStockOrderModal({ ...stockOrderModal, orderQty: Number(e.target.value) })}
+                />
+              </label>
+              <label>
+                Birim Fiyat &amp; Toplam
+                <input value={`${stockOrderModal.unitPrice} (Toplam: ₺${(stockOrderModal.orderQty * 420).toLocaleString('tr-TR')})`} readOnly style={{ background: '#f5f5f5', fontWeight: 700 }} />
+              </label>
+            </div>
+
+            <label>
+              Teslimat Deposu
+              <input value="Merkez Yedek Parça Deposu - Raf: C-14" readOnly style={{ background: '#f5f5f5' }} />
+            </label>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="cancel-btn" onClick={() => setStockOrderModal(null)}>Vazgeç</button>
+            <button
+              type="button"
+              className="primary"
+              onClick={() => {
+                setStockOrderModal(null)
+                setFeedbackAlert({
+                  type: 'success',
+                  message: `✅ NH-342 Orijinal Yağ Filtresi için ${stockOrderModal.orderQty} adetlik tedarikçi siparişi başarıyla iletildi!`
+                })
+              }}
+            >
+              <ShoppingCart size={16} /> Siparişi Onayla &amp; Tedarikçiye Gönder
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* 3. Müşteri Şikayet & Destek Yanıtlama Modalı */}
+    {ticketModal && (
+      <div className="modal-backdrop" onClick={() => setTicketModal(null)}>
+        <div className="task-modal" style={{ maxWidth: 620 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+          <div className="modal-header">
+            <div>
+              <span className="eyebrow">ŞİKAYET &amp; TALEP #{ticketModal.no}</span>
+              <h2>Talebi Yanıtla &amp; Servise Ata</h2>
+            </div>
+            <button type="button" className="modal-close" onClick={() => setTicketModal(null)}>✕</button>
+          </div>
+          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '20px 24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 10 }}>
+              <div style={{ padding: 10, background: '#f8faf8', borderRadius: 8, border: '1px solid #e5ebe5' }}>
+                <small style={{ fontSize: 10, color: '#728478', fontWeight: 700 }}>MÜŞTERİ</small>
+                <b style={{ display: 'block', fontSize: 12, color: '#143e2c', marginTop: 2 }}>{ticketModal.customer} ({ticketModal.phone})</b>
+              </div>
+              <div style={{ padding: 10, background: '#fff3e0', borderRadius: 8, border: '1px solid #ffe0b2' }}>
+                <small style={{ fontSize: 10, color: '#e65100', fontWeight: 700 }}>ÖNCELİK DURUMU</small>
+                <b style={{ display: 'block', fontSize: 12, color: '#e65100', marginTop: 2 }}>⚡ {ticketModal.priority}</b>
+              </div>
+            </div>
+
+            <div style={{ padding: 12, background: '#fdfaf5', borderRadius: 8, border: '1px solid #fae6cf' }}>
+              <b style={{ display: 'block', fontSize: 12, color: '#b45309', marginBottom: 4 }}>Arıza Bildirimi Detayı:</b>
+              <p style={{ margin: 0, fontSize: 12, color: '#554', lineHeight: 1.45 }}>{ticketModal.description}</p>
+            </div>
+
+            <label>
+              Atanan Teknisyen / Ekip
+              <input value={ticketModal.assignedTech} readOnly style={{ background: '#f5f5f5' }} />
+            </label>
+
+            <label>
+              Müşteriye İletilecek Yanıt Mesajı (SMS &amp; E-Posta)
+              <textarea
+                rows={4}
+                value={ticketModal.replyText}
+                onChange={(e) => setTicketModal({ ...ticketModal, replyText: e.target.value })}
+              />
+            </label>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="cancel-btn" onClick={() => setTicketModal(null)}>Vazgeç</button>
+            <button
+              type="button"
+              className="primary"
+              onClick={() => {
+                setTicketModal(null)
+                setFeedbackAlert({
+                  type: 'success',
+                  message: `✅ Mehmet Kaya'nın arıza talebine yanıt iletildi ve Saha Ekip 2 görevi onaylandı!`
+                })
+              }}
+            >
+              <Send size={15} /> Yanıtı İlet &amp; Servisi Başlat
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   </>
 }
 
 export default function App() {
   const [page, setPage] = useState<Page>('Genel Bakış')
   const [open, setOpen] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('agroplus_sidebar_state')
+      return saved !== null ? JSON.parse(saved) : false
+    } catch {
+      return false
+    }
+  })
+  const [calendarOpen, setCalendarOpen] = useState(false)
+  const [notificationOpen, setNotificationOpen] = useState(false)
+  const [fullCalendarOpen, setFullCalendarOpen] = useState(false)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [profileAnchor, setProfileAnchor] = useState<'header' | 'sidebar'>('header')
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
+  const [isPreferencesModalOpen, setIsPreferencesModalOpen] = useState(false)
+  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS)
+  const [currentParams, setCurrentParams] = useState<Record<string, any>>({})
+
+  // Persist sidebar collapsed state to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('agroplus_sidebar_state', JSON.stringify(isSidebarCollapsed))
+    } catch (e) {
+      console.warn('localStorage save error', e)
+    }
+  }, [isSidebarCollapsed])
+
+  // Keyboard shortcut Ctrl+B or Cmd+B to toggle sidebar collapse
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault()
+        setIsSidebarCollapsed((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Read initial query params if any
+  useEffect(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search)
+      const targetPage = searchParams.get('page')
+      if (targetPage) {
+        setPage(targetPage as Page)
+      }
+    } catch (e) {
+      console.warn('URL search params read fallback', e)
+    }
+  }, [])
+
+  const unreadCount = useMemo(() => {
+    return notifications.filter((n) => !n.isRead).length
+  }, [notifications])
+
+  const handleMarkAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+  }
+
+  const handleMarkAsRead = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    )
+  }
+
+  const handleDeleteNotification = (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id))
+  }
+
+  const handleNavigate = (targetPage: Page, params?: Record<string, any>) => {
+    setPage(targetPage)
+    setCurrentParams(params || {})
+    setCalendarOpen(false)
+    setNotificationOpen(false)
+    setFullCalendarOpen(false)
+    setProfileMenuOpen(false)
+    setOpen(false)
+
+    // Deep-linking URL update with query parameters
+    try {
+      const url = new URL(window.location.href)
+      url.searchParams.set('page', targetPage)
+      if (params) {
+        Object.entries(params).forEach(([k, v]) => {
+          url.searchParams.set(k, String(v))
+        })
+      }
+      window.history.pushState({}, '', url.toString())
+    } catch (e) {
+      console.warn('History pushState fallback', e)
+    }
+  }
+
   const title = useMemo(() => page === 'Genel Bakış' ? 'Genel Bakış' : page, [page])
 
-  return <div className="app">
-    <aside className={open ? 'open' : ''}>
-      <div className="brand">
-        <div className="brand-mark"><span /><i /></div>
-        <div><b>Agro<span>Plus</span></b><small>Yönetim Paneli</small></div>
-        <button className="mobile-close" onClick={() => setOpen(false)}><X /></button>
-      </div>
-      <nav>
-        <p className="nav-label">ANA MENÜ</p>
-        {mainNav.map(({ label, icon: Icon, badge, badgeClass }) => (
-          <button
-            className={page === label ? 'active' : ''}
-            onClick={() => { setPage(label); setOpen(false) }}
-            key={label}
-          >
-            <Icon size={19} />
-            <span>{label}</span>
-            {badge && <em className={badgeClass || ''}>{badge}</em>}
-          </button>
-        ))}
+  return (
+    <div className={`app ${isSidebarCollapsed ? 'collapsed-sidebar' : ''}`}>
+      {/* Mobile Drawer Overlay Backdrop */}
+      {open && <div className="mobile-drawer-backdrop" onClick={() => setOpen(false)} />}
 
-        <p className="nav-label ai-group">
-          <Sparkles size={13} color="#79c45d" />
-          YAPAY ZEKA AJANLARI
-        </p>
-        {aiNav.map(({ label, icon: Icon, badge, badgeClass }) => (
-          <button
-            className={page === label ? 'active' : ''}
-            onClick={() => { setPage(label); setOpen(false) }}
-            key={label}
-          >
-            <Icon size={19} />
-            <span>{label}</span>
-            {badge && <em className={badgeClass || ''}>{badge}</em>}
-          </button>
-        ))}
+      <aside className={`${open ? 'open' : ''} ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+        {/* Tek Merkezli Kenar Kontrol Butonu (Rail Toggle) */}
+        <button
+          type="button"
+          className="sidebar-rail-toggle"
+          onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+          title={isSidebarCollapsed ? 'Menüyü Genişlet (Ctrl + B)' : 'Menüyü Daralt (Ctrl + B)'}
+          aria-label="Menüyü Daralt / Genişlet"
+        >
+          {isSidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
 
-        <p className="nav-label second">YÖNETİM</p>
-        {mgmtNav.map(({ label, icon: Icon, badge, badgeClass }) => (
-          <button
-            className={page === label ? 'active' : ''}
-            onClick={() => { setPage(label); setOpen(false) }}
-            key={label}
-          >
-            <Icon size={19} />
-            <span>{label}</span>
-            {badge && <em className={badgeClass || ''}>{badge}</em>}
-          </button>
-        ))}
-      </nav>
-      <div className="side-bottom">
-        <div className="help"><Sparkles size={18} /><div><b>Yardıma mı ihtiyacınız var?</b><small>Destek merkezini ziyaret edin</small></div></div>
-        <div className="profile"><div className="avatar">SA</div><div><b>Selin Aksoy</b><small>Yönetici</small></div><ChevronDown size={16} /></div>
-      </div>
-    </aside>
-
-    <main>
-      <header>
-        <button className="menu-btn" onClick={() => setOpen(true)}><Menu /></button>
-        <div className="crumb"><span>AgroPlus</span><i>/</i><b>{title}</b></div>
-        <div className="header-right">
-          <button className="icon-btn"><CalendarDays size={19} /></button>
-          <button className="icon-btn notification"><Bell size={19} /><em /></button>
-          <div className="header-avatar">SA</div>
+        <div className="brand">
+          <div className="brand-mark" title="AgroPlus"><span /><i /></div>
+          <div className="brand-title"><b>Agro<span>Plus</span></b><small>Yönetim Paneli</small></div>
+          <button className="mobile-close" onClick={() => setOpen(false)}><X /></button>
         </div>
-      </header>
-      <div className="content">
-        {page === 'Genel Bakış' ? (
-          <Overview setPage={setPage} />
-        ) : page === 'Sipariş & Teklifler' ? (
-          <OrdersAndQuotes onNavigateToQuoteControl={() => setPage('Teklif Kontrolü (AI)')} />
-        ) : page === 'Teklif Kontrolü (AI)' ? (
-          <QuoteControlPage />
-        ) : page === 'Sosyal Medya İçeriği Üret' ? (
-          <SocialMediaAgent />
-        ) : page === 'Analiz & Raporlama' ? (
-          <AnalyticsPage />
-        ) : page === 'Saha İşleri' ? (
-          <FieldWorks />
-        ) : page === 'Yapay Zeka Ajanları' ? (
-          <AiAgentsPage />
-        ) : (
-          <DetailPage page={page} />
-        )}
-      </div>
-    </main>
-  </div>
+        <nav>
+          <p className="nav-label">ANA MENÜ</p>
+          {mainNav.map(({ label, icon: Icon, badge, badgeClass }) => (
+            <button
+              className={page === label ? 'active' : ''}
+              onClick={() => handleNavigate(label)}
+              key={label}
+            >
+              <Icon size={19} />
+              <span>{label}</span>
+              {badge && <em className={badgeClass || ''}>{badge}</em>}
+              <span className="nav-tooltip">
+                {label}
+                {badge && <span className={`nav-tooltip-badge ${badgeClass || ''}`}>{badge}</span>}
+              </span>
+            </button>
+          ))}
+
+          <p className="nav-label ai-group">
+            <Sparkles size={13} color="#79c45d" />
+            YAPAY ZEKA AJANLARI
+          </p>
+          {aiNav.map(({ label, icon: Icon, badge, badgeClass }) => (
+            <button
+              className={page === label ? 'active' : ''}
+              onClick={() => handleNavigate(label)}
+              key={label}
+            >
+              <Icon size={19} />
+              <span>{label}</span>
+              {badge && <em className={badgeClass || ''}>{badge}</em>}
+              <span className="nav-tooltip">
+                {label}
+                {badge && <span className={`nav-tooltip-badge ${badgeClass || ''}`}>{badge}</span>}
+              </span>
+            </button>
+          ))}
+
+          <p className="nav-label second">YÖNETİM</p>
+          {mgmtNav.map(({ label, icon: Icon, badge, badgeClass }) => (
+            <button
+              className={page === label ? 'active' : ''}
+              onClick={() => handleNavigate(label)}
+              key={label}
+            >
+              <Icon size={19} />
+              <span>{label}</span>
+              {badge && <em className={badgeClass || ''}>{badge}</em>}
+              <span className="nav-tooltip">
+                {label}
+                {badge && <span className={`nav-tooltip-badge ${badgeClass || ''}`}>{badge}</span>}
+              </span>
+            </button>
+          ))}
+        </nav>
+        <div className="side-bottom">
+          <div className="help"><Sparkles size={18} /><div><b>Yardıma mı ihtiyacınız var?</b><small>Destek merkezini ziyaret edin</small></div></div>
+          
+          {/* Kullanıcı Profil Kartı & Drop-up Menü Kapsayıcısı */}
+          <div className="sidebar-profile-container">
+            {profileMenuOpen && profileAnchor === 'sidebar' && (
+              <UserProfileMenu
+                isOpen={profileMenuOpen}
+                onClose={() => setProfileMenuOpen(false)}
+                anchorPosition="sidebar"
+                isSidebarCollapsed={isSidebarCollapsed}
+                onNavigate={handleNavigate}
+                onOpenAccountModal={() => setIsAccountModalOpen(true)}
+                onOpenPreferencesModal={() => setIsPreferencesModalOpen(true)}
+              />
+            )}
+
+            <div
+              className="profile clickable"
+              onClick={() => {
+                setProfileMenuOpen((prev) => (profileAnchor === 'sidebar' ? !prev : true))
+                setProfileAnchor('sidebar')
+                setCalendarOpen(false)
+                setNotificationOpen(false)
+              }}
+              title="Selin Aksoy · Yönetici (Profili Aç)"
+              role="button"
+              tabIndex={0}
+            >
+              <div className="avatar">SA</div>
+              <div className="profile-info"><b>Selin Aksoy</b><small>Yönetici</small></div>
+              <ChevronDown size={16} className="profile-chevron" />
+              <span className="nav-tooltip">Selin Aksoy · Yönetici</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <header>
+          <div className="header-left">
+            <button className="menu-btn" onClick={() => setOpen(true)} title="Menüyü Aç"><Menu size={20} /></button>
+            <div className="crumb"><span>AgroPlus</span><i>/</i><b>{title}</b></div>
+          </div>
+          <div className="header-right">
+            {/* Takvim Popover İkonu */}
+            <button
+              type="button"
+              className={`icon-btn ${calendarOpen ? 'active' : ''}`}
+              onClick={() => {
+                setCalendarOpen((prev) => !prev)
+                setNotificationOpen(false)
+                setProfileMenuOpen(false)
+              }}
+              title="Operasyon & Randevu Takvimi"
+              aria-label="Operasyon & Randevu Takvimi"
+            >
+              <CalendarDays size={19} />
+            </button>
+
+            {/* Bildirim Çekmecesi İkonu & Dinamik Rozet */}
+            <button
+              type="button"
+              className={`icon-btn notification ${notificationOpen ? 'active' : ''}`}
+              onClick={() => {
+                setNotificationOpen((prev) => !prev)
+                setCalendarOpen(false)
+                setProfileMenuOpen(false)
+              }}
+              title="Duyurular & Bildirimler"
+              aria-label="Duyurular & Bildirimler"
+            >
+              <Bell size={19} />
+              {unreadCount > 0 && (
+                <span className="notification-badge-chip">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Kullanıcı Profili Avatar Butonu & Drop-down */}
+            <div className="header-profile-container">
+              <button
+                type="button"
+                className={`header-avatar-btn ${profileMenuOpen && profileAnchor === 'header' ? 'active' : ''}`}
+                onClick={() => {
+                  setProfileMenuOpen((prev) => (profileAnchor === 'header' ? !prev : true))
+                  setProfileAnchor('header')
+                  setCalendarOpen(false)
+                  setNotificationOpen(false)
+                }}
+                title="Kullanıcı Profili & Hesap Ayarları"
+                aria-label="Kullanıcı Profili & Hesap Ayarları"
+              >
+                <div className="header-avatar">SA</div>
+              </button>
+
+              {profileMenuOpen && profileAnchor === 'header' && (
+                <UserProfileMenu
+                  isOpen={profileMenuOpen}
+                  onClose={() => setProfileMenuOpen(false)}
+                  anchorPosition="header"
+                  isSidebarCollapsed={isSidebarCollapsed}
+                  onNavigate={handleNavigate}
+                  onOpenAccountModal={() => setIsAccountModalOpen(true)}
+                  onOpenPreferencesModal={() => setIsPreferencesModalOpen(true)}
+                />
+              )}
+            </div>
+
+            {/* Takvim Popover Açılır Kartı */}
+            <AgroCalendarPopover
+              isOpen={calendarOpen}
+              onClose={() => setCalendarOpen(false)}
+              onNavigate={handleNavigate}
+              onOpenFullCalendar={() => {
+                setCalendarOpen(false)
+                setFullCalendarOpen(true)
+              }}
+            />
+          </div>
+        </header>
+
+        {/* Bildirim Çekmecesi (Slide-Over Drawer) */}
+        <AgroNotificationDrawer
+          isOpen={notificationOpen}
+          onClose={() => setNotificationOpen(false)}
+          notifications={notifications}
+          onMarkAllAsRead={handleMarkAllAsRead}
+          onMarkAsRead={handleMarkAsRead}
+          onDeleteNotification={handleDeleteNotification}
+          onNavigate={handleNavigate}
+        />
+
+        {/* Genişletilmiş Takvim Modalı */}
+        <FullCalendarModal
+          isOpen={fullCalendarOpen}
+          onClose={() => setFullCalendarOpen(false)}
+          onNavigate={handleNavigate}
+        />
+
+        {/* 👤 "Hesap Detayları & Güvenlik" Modalı */}
+        <AccountDetailsModal
+          isOpen={isAccountModalOpen}
+          onClose={() => setIsAccountModalOpen(false)}
+        />
+
+        {/* ⚙️ "Sistem Tercihleri" Modalı */}
+        <PreferencesModal
+          isOpen={isPreferencesModalOpen}
+          onClose={() => setIsPreferencesModalOpen(false)}
+        />
+
+        <div className="content">
+          {page === 'Genel Bakış' ? (
+            <Overview setPage={(p) => handleNavigate(p)} />
+          ) : page === 'Sipariş & Teklifler' ? (
+            <OrdersAndQuotes
+              onNavigateToQuoteControl={() => handleNavigate('Teklif Kontrolü (AI)')}
+              initialParams={currentParams}
+            />
+          ) : page === 'Teklif Kontrolü (AI)' ? (
+            <QuoteControlPage initialParams={currentParams} />
+          ) : page === 'Sosyal Medya İçeriği Üret' ? (
+            <SocialMediaAgent />
+          ) : page === 'Analiz & Raporlama' ? (
+            <AnalyticsPage />
+          ) : page === 'Saha İşleri' ? (
+            <FieldWorks initialParams={currentParams} />
+          ) : page === 'Yapay Zeka Ajanları' ? (
+            <AiAgentsPage />
+          ) : (
+            <DetailPage page={page} params={currentParams} onNavigate={handleNavigate} />
+          )}
+        </div>
+      </main>
+    </div>
+  )
 }
+
 

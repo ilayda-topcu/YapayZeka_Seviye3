@@ -29,12 +29,35 @@ const fallbackCombinedList: OrderItem[] = [
   { id: '6', type: 'QUOTE', no: 'TKL-0999', customer: 'Anadolu Kooperatifi', amount: '₺115.000', rawAmount: 115000, status: 'ONAYLANDI', date: '2026-08-29' }
 ]
 
-export default function OrdersAndQuotes({ onNavigateToQuoteControl }: { onNavigateToQuoteControl: () => void }) {
+export default function OrdersAndQuotes({
+  onNavigateToQuoteControl,
+  initialParams
+}: {
+  onNavigateToQuoteControl: () => void
+  initialParams?: Record<string, any>
+}) {
   const [activeTab, setActiveTab] = useState<TabType>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [orders, setOrders] = useState<string[][]>([])
   const [quotes, setQuotes] = useState<string[][]>([])
   const [loading, setLoading] = useState(false)
+  const [showNewQuoteModal, setShowNewQuoteModal] = useState(Boolean(initialParams?.new || initialParams?.lead_id))
+  const [leadForm, setLeadForm] = useState({
+    customer: initialParams?.lead_id ? 'Anadolu Tarım Kooperatifi' : 'Yeni Müşteri',
+    product: initialParams?.product || 'Pnömatik Hassas Ekim Makinesi (6 Sıralı)',
+    amount: '₺245.000',
+    deliveryDate: '2026-09-20',
+    notes: 'Web formundan gelen talep (Lead #301). Müşteri peşin indirim oranı ve vade seçenekleri sordu.'
+  })
+  const [quoteSuccessMsg, setQuoteSuccessMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (initialParams?.new || initialParams?.lead_id) {
+      setShowNewQuoteModal(true)
+      setActiveTab('quotes')
+    }
+  }, [initialParams])
+
 
   useEffect(() => {
     const load = async () => {
@@ -341,6 +364,144 @@ export default function OrdersAndQuotes({ onNavigateToQuoteControl }: { onNaviga
           )}
         </div>
       </section>
+
+      {/* Web Lead / Yeni Teklif Hazırlama Modalı */}
+      {showNewQuoteModal && (
+        <div className="modal-backdrop" onClick={() => setShowNewQuoteModal(false)}>
+          <div
+            className="task-modal"
+            style={{ maxWidth: 620 }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="modal-header">
+              <div>
+                <span className="eyebrow">
+                  {initialParams?.lead_id ? `WEB FORM LEAD #${initialParams.lead_id}` : 'YENİ TEKLİF & SATIŞ İŞLEMİ'}
+                </span>
+                <h2>Yeni Fiyat Teklifi Hazırla</h2>
+              </div>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setShowNewQuoteModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ display: 'block', padding: '18px 24px' }}>
+              {quoteSuccessMsg ? (
+                <div style={{ padding: 24, textAlign: 'center' }}>
+                  <CheckCircle2 size={44} color="#2e7d32" style={{ marginBottom: 12 }} />
+                  <h3 style={{ margin: '0 0 8px', color: '#143e2c' }}>Teklif Başarıyla Oluşturuldu!</h3>
+                  <p style={{ color: '#556b5d', fontSize: 13, margin: '0 0 16px' }}>{quoteSuccessMsg}</p>
+                  <button
+                    type="button"
+                    className="primary"
+                    style={{ margin: '0 auto' }}
+                    onClick={() => {
+                      setShowNewQuoteModal(false)
+                      onNavigateToQuoteControl()
+                    }}
+                  >
+                    <Zap size={15} /> AI Teklif Kontrol Paneline Git
+                  </button>
+                </div>
+              ) : (
+                <div className="form-main">
+                  {initialParams?.lead_id && (
+                    <div style={{
+                      padding: '10px 14px',
+                      backgroundColor: '#e3f2fd',
+                      border: '1px solid #90caf9',
+                      borderRadius: 8,
+                      color: '#0d47a1',
+                      fontSize: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      marginBottom: 6
+                    }}>
+                      <ShoppingCart size={16} />
+                      <span>Web sitesi iletişim formundan gelen yeni talep otomatik olarak dolduruldu.</span>
+                    </div>
+                  )}
+
+                  <div className="form-grid">
+                    <label>
+                      Müşteri / Firma Adı
+                      <input
+                        value={leadForm.customer}
+                        onChange={(e) => setLeadForm({ ...leadForm, customer: e.target.value })}
+                        placeholder="Müşteri adı..."
+                      />
+                    </label>
+                    <label>
+                      Teklif Tutarı
+                      <input
+                        value={leadForm.amount}
+                        onChange={(e) => setLeadForm({ ...leadForm, amount: e.target.value })}
+                        placeholder="Örn. ₺245.000"
+                      />
+                    </label>
+                  </div>
+
+                  <label>
+                    Talep Edilen Ürün / Makine
+                    <input
+                      value={leadForm.product}
+                      onChange={(e) => setLeadForm({ ...leadForm, product: e.target.value })}
+                      placeholder="Ürün veya ekipman adı..."
+                    />
+                  </label>
+
+                  <label>
+                    Geçerlilik Tarihi
+                    <input
+                      type="date"
+                      value={leadForm.deliveryDate}
+                      onChange={(e) => setLeadForm({ ...leadForm, deliveryDate: e.target.value })}
+                    />
+                  </label>
+
+                  <label>
+                    Teklif Notları &amp; Koşullar
+                    <textarea
+                      rows={3}
+                      value={leadForm.notes}
+                      onChange={(e) => setLeadForm({ ...leadForm, notes: e.target.value })}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {!quoteSuccessMsg && (
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={() => setShowNewQuoteModal(false)}
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => {
+                    setQuoteSuccessMsg(`TKL-1003 numaralı teklif kaydedildi ve AI Teklif Onay Ajanı'nın kuyruğuna iletildi!`)
+                  }}
+                >
+                  <Plus size={16} /> Teklifi Kaydet &amp; AI Analizine Gönder
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
